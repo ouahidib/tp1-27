@@ -1,26 +1,34 @@
 package com.ouahidi.etudiantms.web;
-
+import com.ouahidi.etudiantms.DTOs.EtudiantRequestDTO;
+import com.ouahidi.etudiantms.DTOs.EtudiantResponseDTO;
 import com.ouahidi.etudiantms.entities.Etudiant;
 import com.ouahidi.etudiantms.repositories.EtudiantRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import com.ouahidi.etudiantms.service.InterfaceService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
+// Le controlleur REST
 @RestController
+
+@RequestMapping("/api")
+// Pour utiliser le controlleur par defaut
 public class EtudiantController {
-    EtudiantRepository etudiantRepository;
-    // ICI IoC par ID par constructeur
-    public EtudiantController(EtudiantRepository etudiantRepository) {
-        this.etudiantRepository = etudiantRepository;
+    public EtudiantController(InterfaceService interfaceService) {
+        this.interfaceService = interfaceService;
     }
+
+    InterfaceService interfaceService;
 
 
     // GET DE HTTP:
     // L'appel se fera:  http://localhost:6060/etudiants
     @GetMapping("/etudiants")
-    public List<Etudiant> etudiants(){
-        return etudiantRepository.findAll();
+    public List<EtudiantResponseDTO> etudiants() {
+
+        return interfaceService.getAllEtudiants();
     }
 
     // GET
@@ -28,36 +36,48 @@ public class EtudiantController {
     // Si on cherche l'étudiant d'Id i (un entier)
     // i passé dans les paramètres avec @PathVariable
     @GetMapping("/etudiants/{id}")
-    public Etudiant etudiant(@PathVariable int id){
-        return etudiantRepository.findById(id).get();
-}
+    public EtudiantResponseDTO unEtudiant(@PathVariable String id) {
+        try {
+            return interfaceService.getEtudiantById(id);
 
-   // POST pour créer un étudiant sur la BD
+        } catch (RuntimeException ex) {
+            throw new RuntimeException(String.format("etudiant %s not found", id));
+        }
+
+
+    }
+
+    // POST pour créer un étudiant sur la BD
     // l'appel sera par POST (Postman)
     // http://localhost:6060/etudiants
     // On passe etudiant dans le body de  POST
     @PostMapping("/etudiants")
-    public Etudiant newEtudiant(@RequestBody Etudiant etudiant){
-         return etudiantRepository.save(etudiant);
+    public void newEtudiant(@RequestBody EtudiantRequestDTO etudiant) {
+        interfaceService.createEtudiant(etudiant);
     }
 
     // appel http://localhost:6060/etudiants/2
     // enlève l'étudiant 2 de la base avec DELETTE de HTTP.
-    @DeleteMapping ("/etudiants/{id}")
-    public void deleteEtudiant(@PathVariable int id){
-        etudiantRepository.deleteById(id);
-        // Ici on suppose que l'étudiant id existe on verra comment
-        // faire sinon
-    }
+    @DeleteMapping("/etudiants/{id}")
+    public void deleteEtudiant(@PathVariable String id) {
+        try {
+            interfaceService.deleteEtudiant(id);
+        } catch (RuntimeException ex) {
 
+        }
+
+    }
     // On veut modifier l'etudiant id
     // par l'étudiant  etudiant donné dans le body PUT
 
     @PutMapping("/etudiants/{id}")
-    public Etudiant modifieEtudiant (@PathVariable int id, @RequestBody Etudiant etudiant){
-        return etudiantRepository.save(etudiant);
-        // On verra comment améliorer tout ca.
+    public void modifieEtudiant(@PathVariable String  id, @RequestBody EtudiantRequestDTO etudiant) {
+    try{
+        interfaceService.updateEtudiant(id, etudiant);
+
+
+    } catch (RuntimeException ex) {
+    throw new RuntimeException(String.format("etudiant %s not found", id));
     }
-
-
+    }
 }
